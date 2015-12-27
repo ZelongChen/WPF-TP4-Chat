@@ -1,0 +1,79 @@
+﻿<Window x:Class="Client.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Client"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="350" Width="525">
+    <Grid>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1.5*"></RowDefinition>
+            <RowDefinition Height="1*"></RowDefinition>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"></ColumnDefinition>
+            <ColumnDefinition Width="1*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        
+        <Grid Grid.Row="0" Grid.Column="0">
+            <TextBlock Text="Chat history" 
+                       FontFamily="Comic Sans MS"
+                       Margin="10,0,0,0"></TextBlock>
+            <ListView x:Name="HistoryMessageList"
+                      Margin="10,20,10,10"
+                      ItemsSource="{Binding _messages}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding Username}"></TextBlock>
+                            <TextBlock Text=" : "></TextBlock>
+                            <TextBlock Text="{Binding Text}"></TextBlock>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ListView>
+        </Grid>
+
+        <Grid Grid.Row="1" Grid.Column="0">
+            <TextBlock Text="Enter your message here" 
+                       FontFamily="Comic Sans MS"
+                       Margin="10,0,0,0"></TextBlock>
+            <TextBox Name="InputTextBox"
+                     Text="Input your text here"
+                     Margin="10,20,10,10"
+                     VerticalAlignment="Stretch" 
+                     HorizontalAlignment="Stretch">
+            </TextBox>
+        </Grid>
+        
+        <Grid Grid.Row="0" Grid.Column="1">
+            <TextBlock Text="Users connected" 
+                       FontFamily="Comic Sans MS"
+                       Margin="10,0,0,0"></TextBlock>
+            <ListView Name="UserList"
+                  Grid.Row="0"
+                  Grid.Column="1"
+                  Margin="10,20,10,10"
+                  ItemsSource="{Binding _users}">
+            </ListView>
+        </Grid>
+
+        <Grid Grid.Row="1" Grid.Column="1">
+            <Button Name="SendButton" 
+                    Content="Send message" 
+                    Background="Green"
+                    VerticalAlignment="Center" 
+                    HorizontalAlignment="Center" 
+                    Click="SendButton_Click"></Button>
+            <Button Name="Logout"
+                    Content="Log out"
+                    Background="Red"
+                    VerticalAlignment="Bottom"
+                    HorizontalAlignment="Center"
+                    Margin="0,0,0,20"
+                    Click="Logout_Click"/>
+        </Grid>
+    </Grid>
+</Window>
