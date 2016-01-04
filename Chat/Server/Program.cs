@@ -31,7 +31,7 @@ namespace Server
         public string SendNewMessage(Message message)
         {
             _historyMessages.Add(message);
-            return "receive your input";
+            return "message sent with success";
 
         }
 
