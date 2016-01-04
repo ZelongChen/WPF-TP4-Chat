@@ -55,6 +55,7 @@ namespace Server
             else
             {
                 _users.Names.Add(username);
+                Console.WriteLine(username + " sign in");
                 return true;
             }
         }
@@ -62,6 +63,7 @@ namespace Server
         public bool Logout(string username)
         {
             _users.Names.Remove(username);
+            Console.WriteLine(username + " quit");
             return true;
         }
     }

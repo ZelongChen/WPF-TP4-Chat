@@ -40,7 +40,8 @@ namespace Client
                 channel = new TcpChannel();
                 ChannelServices.RegisterChannel(channel, true);
                 _interface = (IRemotingInterface)Activator.GetObject(typeof(IRemotingInterface), "tcp://" + _address + ":" + _port + "/Server");
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 Console.Write(ex.Message);
             }
@@ -78,7 +79,8 @@ namespace Client
                     thread.Start();
                     return true;
                 }
-            } else
+            }
+            else
             {
                 MessageBox.Show("Server is not running or listening on this port", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 ChannelServices.UnregisterChannel(channel);
@@ -96,8 +98,6 @@ namespace Client
 
         private void Logout_Click(object sender, RoutedEventArgs e)
         {
-            _interface.Logout(_username);
-            ChannelServices.UnregisterChannel(channel);
             LoginWindow loginWindow = new LoginWindow();
             loginWindow.Show();
             this.Close();
@@ -129,17 +129,22 @@ namespace Client
 
         private void HandleUsers(object sender, EventArgs e)
         {
-            Application.Current.Dispatcher.Invoke(
-                System.Windows.Threading.DispatcherPriority.Normal,
-                (Action)delegate ()
-                {
-                    _users.Clear();
-                    List<string> names = (e as Users).Names;
-                    for (int i = 0; i < names.Count; i++)
+            var application = Application.Current;
+            if (application != null)
+            {
+                application.Dispatcher.Invoke(
+                    System.Windows.Threading.DispatcherPriority.Normal,
+                    (Action)delegate ()
                     {
-                        _users.Add(names[i]);
+                        _users.Clear();
+                        List<string> names = (e as Users).Names;
+                        for (int i = 0; i < names.Count; i++)
+                        {
+                            _users.Add(names[i]);
+                        }
                     }
-                });
+                );
+            }
         }
 
         private void HandleCloseWindow(object sender, EventArgs e)
@@ -150,9 +155,9 @@ namespace Client
                 if (!nameDup)
                 {
                     _interface.Logout(_username);
+                    ChannelServices.UnregisterChannel(channel);
                 }
             }
-            //ChannelServices.UnregisterChannel(channel);
         }
 
     }
