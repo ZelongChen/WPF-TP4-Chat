@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Net.Sockets;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Threading;
@@ -17,6 +18,7 @@ namespace Client
         private string _username;
         private string _address;
         private int _port;
+        private bool _nameDup;
         private TcpChannel channel;
 
         public MainWindow(string username, string address, int port)
@@ -33,33 +35,58 @@ namespace Client
             _messages = new ObservableCollection<Message>();
             _users = new ObservableCollection<string>();
 
-            channel = new TcpChannel();
-            ChannelServices.RegisterChannel(channel, true);
-            _interface = (IRemotingInterface)Activator.GetObject(typeof(IRemotingInterface), "tcp://" + _address + ":" + _port + "/Server");
+            try
+            {
+                channel = new TcpChannel();
+                ChannelServices.RegisterChannel(channel, true);
+                _interface = (IRemotingInterface)Activator.GetObject(typeof(IRemotingInterface), "tcp://" + _address + ":" + _port + "/Server");
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.Message);
+            }
 
         }
 
         public bool CanLogin()
         {
-            if (!_interface.Login(_username))
+            if (_interface == null)
             {
-                MessageBox.Show("Username has already been used", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                this.Close();
+                MessageBox.Show("IP or port not availabe, please change and try again", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 ChannelServices.UnregisterChannel(channel);
                 return false;
             }
+
+            if (PingHost(_address, _port))
+            {
+                if (!_interface.Login(_username))
+                {
+                    MessageBox.Show("Username has already been used", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    _nameDup = true;
+                    this.Close();
+                    ChannelServices.UnregisterChannel(channel);
+                    return false;
+                }
+                else
+                {
+                    Work work = new Work();
+                    work.username = _username;
+                    work.address = _address;
+                    work.port = _port;
+                    work.ListenToNewMessages += HandleNewMessages;
+                    work.ListenToUsers += HandleUsers;
+                    Thread thread = new Thread(work.CheckForUpdate);
+                    thread.Start();
+                    return true;
+                }
+            }
             else
             {
-                Work work = new Work();
-                work.username = _username;
-                work.address = _address;
-                work.port = _port;
-                work.ListenToNewMessages += HandleNewMessages;
-                work.ListenToUsers += HandleUsers;
-                Thread thread = new Thread(work.CheckForUpdate);
-                thread.Start();
-                return true;
+                MessageBox.Show("Server is not running or listening on this port", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ChannelServices.UnregisterChannel(channel);
+                return false;
             }
+
         }
 
         private void SendButton_Click(object sender, RoutedEventArgs e)
@@ -71,11 +98,23 @@ namespace Client
 
         private void Logout_Click(object sender, RoutedEventArgs e)
         {
-            _interface.Logout(_username);
-            ChannelServices.UnregisterChannel(channel);
             LoginWindow loginWindow = new LoginWindow();
             loginWindow.Show();
             this.Close();
+        }
+
+        public static bool PingHost(string _HostURI, int _PortNumber)
+        {
+            try
+            {
+                TcpClient client = new TcpClient(_HostURI, _PortNumber);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.Message);
+                return false;
+            }
         }
 
         private void HandleNewMessages(object sender, EventArgs e)
@@ -90,23 +129,35 @@ namespace Client
 
         private void HandleUsers(object sender, EventArgs e)
         {
-            Application.Current.Dispatcher.Invoke(
-                System.Windows.Threading.DispatcherPriority.Normal,
-                (Action)delegate ()
-                {
-                    _users.Clear();
-                    List<string> names = (e as Users).Names;
-                    for (int i = 0; i < names.Count; i++)
+            var application = Application.Current;
+            if (application != null)
+            {
+                application.Dispatcher.Invoke(
+                    System.Windows.Threading.DispatcherPriority.Normal,
+                    (Action)delegate ()
                     {
-                        _users.Add(names[i]);
+                        _users.Clear();
+                        List<string> names = (e as Users).Names;
+                        for (int i = 0; i < names.Count; i++)
+                        {
+                            _users.Add(names[i]);
+                        }
                     }
-                });
+                );
+            }
         }
 
         private void HandleCloseWindow(object sender, EventArgs e)
         {
-            _interface.Logout(_username);
-            //ChannelServices.UnregisterChannel(channel);
+            if (_interface != null)
+            {
+                bool nameDup = (sender as MainWindow)._nameDup;
+                if (!nameDup)
+                {
+                    _interface.Logout(_username);
+                    ChannelServices.UnregisterChannel(channel);
+                }
+            }
         }
 
     }
